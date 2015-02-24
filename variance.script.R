@@ -1,16 +1,20 @@
+#read in data
+allaricfhsforvariance <- read.delim("allaricfhsdataforvariance.txt", stringsAsFactors=FALSE)
+
+
 #subset data into males and females for each cohort
-aric<-subset(allaricfhsforvarinace, COHORT=="ARIC")
-fhs<-subset(allaricfhsforvarinace, COHORT=="FHS")
+aric<-subset(allaricfhsforvariance, COHORT=="ARIC")
+fhs<-subset(allaricfhsforvariance, COHORT=="FHS")
 aricfemales<-subset(aric, SEX==2)
 aricmales<-subset(aric, SEX==1)
 fhsmales<-subset(fhs, SEX==1)
 fhsfemales<-subset(fhs, SEX==2)
 
 #initial regression and transformation of residuals
-test <- lm(URICACID~AGE+BMI+PCA1+PCA2, data=FHSmale)
+test <- lm(URICACID~AGE+BMI+PCA1+PCA2, data=fhsmales)
 summary(test)
 residuals <- data.frame(test$residuals)
-rownames(residuals)=FHSmale$SUBJECT[(!is.na(FHSmale$URICACID&FHSmale$AGE&FHSmale$BMI&FHSmale$PCA1&FHSmale$PCA2))]
+rownames(residuals)=fhsmales$SUBJECT[(!is.na(fhsmales$URICACID&fhsmales$AGE&fhsmales$BMI&fhsmales$PCA1&fhsmales$PCA2))]
 transformed <- qnorm((rank(residuals$test.residuals,na.last="keep")-0.5)/sum(!is.na(residuals$test.residuals)))
 residuals$transformed <- (transformed)^2
 residuals$ID <- row.names(residuals)
@@ -32,7 +36,7 @@ write.table(results[,c("MARKER","A1.x","NMISS.y","fix","SE.y","L95.y","U95.y","S
 #feed this data into METAL. Run METAL with STDERR scheme and estimate of genomic control.
 #renaming columns for running manhattan plots
 colnames(metalresults)
-[1] "MARKER"  "CHROM"   "POS"     "ALLELEA" "ALLELEB" "WEIGHT"  "ZSCORE"  "PVALUE" 
+[1] "MARKER"  "CHROM"   "POS"     "ALLELEA" "ALLELEB" "WEIGHT"  "ZSCORE"  "PVALUE"
 colnames(metalresults)[1]="SNP"
 colnames(metalresults)[2]="CHR"
 colnames(metalresults)[3]="BP"
@@ -46,3 +50,5 @@ metalresults2<-subset(metalresults, is.na(metalresults$CHR)==FALSE)
 manhattan(metalresults2, ymax=10, suggestiveline = F, genomewideline = F)
 
 
+library(dplyr)
+allaricfhsforvariance %>% group_by(RS6449173_1 , RS6449173_2) %>% mutate( z = (URICACID - mean(URICACID))/sd(URICACID), logz = (log(URICACID) - mean(log(URICACID)))/sd(log(URICACID))) %>% summarise(mean(z), mean(logz))
