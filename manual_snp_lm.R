@@ -25,14 +25,31 @@ foreach ( line = tped_file) %do% {
   gt <- paste0(a[,1], a[,2])
   gt <- cbind(tfam[,1], gt)
   gt[gt[,2] == "00",2] <- NA
+  gt <- na.omit(gt)
+  gt <- as.data.frame(gt)
+  b<-table(gt[,2])
+
   colnames(gt) <- c("SUBJECT", "SNP")
+  gt$addsnp = -1
+  #assign major/minor allele for additive model
+  if((b[1]*2 + b[2])/ (2*sum(b)) >= 0.5){
+    gt[gt[,2] == names(b[1]),"addsnp"] <- 0
+    gt[gt[,2] == names(b[2]),"addsnp"] <- 1
+    gt[gt[,2] == names(b[3]),"addsnp"] <- 2
+    major=names(b[1])
+  } else{
+    gt[gt[,2] == names(b[1]),"addsnp"] <- 2
+    gt[gt[,2] == names(b[2]),"addsnp"] <- 1
+    gt[gt[,2] == names(b[3]),"addsnp"] <- 0
+    major = names(b[3])
+  }
   snpid <-tped[2]
   pheno_gt <- left_join(x = pheno, y = as.data.frame(gt), by="SUBJECT")
-  pheno_gt <- pheno_gt %>% select(SUBJECT, URICACID, AGE, BMI, PCA1, SEX, PCA2, SNP)
+  pheno_gt <- pheno_gt %>% select(SUBJECT, URICACID, AGE, BMI, PCA1, SEX, PCA2, SNP, addsnp)
   pheno_gt <- na.omit(pheno_gt)
   pheno_gt$rownames <- rownames(pheno_gt)
-  test <- lm(URICACID~AGE+as.factor(SEX)+BMI+PCA1+PCA2+as.factor(SNP), data=pheno_gt)
-  test2 <- lm(residuals.lm(test)^2 ~ as.factor(pheno_gt$SNP))
+  test <- lm(URICACID~AGE+as.factor(SEX)+BMI+PCA1+PCA2+addsnp, data=pheno_gt)
+  test2 <- lm(residuals.lm(test)^2 ~ pheno_gt$addsnp)
 
 
 
@@ -48,10 +65,10 @@ foreach ( line = tped_file) %do% {
   #residuals$transformed <- (transformed)^2
   #residuals$SUBJECT <- row.names(residuals)
   print(paste0(i," ",snpid))
-  add_table(rbind(c(snpid,snpid,snpid,snpid),cbind((cbind(beta= coef(test), confint(test))),Pvalue= summary(test)$coefficients[,4]),c("test2","test2","test2","test2"), cbind((cbind(beta= coef(test2), confint(test2))),Pvalue= summary(test2)$coefficients[,4])))
+  add_table(rbind(c(snpid,major,snpid,snpid),cbind((cbind(beta= coef(test), confint(test))),Pvalue= summary(test)$coefficients[,4]),c("test2","test2","test2","test2"), cbind((cbind(beta= coef(test2), confint(test2))),Pvalue= summary(test2)$coefficients[,4])))
 
   #pheno_gt <- left_join(x = pheno_gt, y = residuals, by="SUBJECT")
-  rm(a,tped,gt,snpid,pheno_gt, test, test2)
+  rm(a,tped,gt,snpid,pheno_gt, test, test2,b,major)
   #test2 <- lm(pheno_gt$transformed ~ pheno_gt$SNP)
 
 }
