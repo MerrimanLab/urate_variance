@@ -1,7 +1,7 @@
 library(dplyr)
 library(data.table)
 library(foreach)
-
+library(iterators)
 add_table=function(x){write.table(x, file="~/Documents/urate_variance/snps.csv",sep="\t", quote=FALSE, append=TRUE)}
 
 tfam <- read.table("~/MurrayXsan/vGWAS/scratch/ARIC/Manual_lm/aric_var_set.tfam", header=FALSE, stringsAsFactors = FALSE)
@@ -48,7 +48,7 @@ foreach ( line = tped_file) %do% {
   pheno_gt <- pheno_gt %>% select(SUBJECT, URICACID, AGE, BMI, PCA1, SEX, PCA2, SNP, addsnp)
   pheno_gt <- na.omit(pheno_gt)
   pheno_gt$rownames <- rownames(pheno_gt)
-  test <- lm(URICACID~AGE+as.factor(SEX)+BMI+PCA1+PCA2+addsnp, data=pheno_gt)
+  test <- lm(BMI~AGE+as.factor(SEX)+URICACID+PCA1+PCA2+addsnp, data=pheno_gt)
   test2 <- lm(residuals.lm(test)^2 ~ pheno_gt$addsnp)
 
 
@@ -73,3 +73,27 @@ foreach ( line = tped_file) %do% {
 
 }
 
+
+#
+# grep -v 'AGE*\|(Intercept*\|PC*\|BMI\|as.factor*\|test*' all_snps.csv >all_snps_filtered.csv
+# cat all_snps_filtered.csv | cut -f5 > snp_p.txt
+#
+
+lines <- read.table("snp_p.txt", stringsAsFactors = FALSE)
+
+df <- data.frame()
+df <- cbind(lines[seq(from=1,to = length(lines[,1]),by = 3), 1 ], lines[seq(2,length(lines[,1]),3), 1 ] , lines[seq(3,length(lines[,1]),3), 1 ])
+colnames(df) <- c("snp", "snp_p", "res_snp_p")
+
+map <- read.table("~/MurrayXsan/vGWAS/archive/variance datasets/ARIC/ARICforvariance.bim", stringsAsFactors = FALSE)
+colnames(map) <- c("chr", "snp", "gen","pos","a1", "a2")
+
+df2 <- merge(map, df, by="snp")
+df2$snp_p <- as.numeric(as.character(df2$snp_p))
+df2$res_snp_p <- as.numeric(as.character(df2$res_snp_p))
+df2$chr <- as.numeric(df2$chr)
+df2$pos <- as.numeric(df2$pos)
+
+library(qqman)
+manhattan(x=df2, chr = 'chr', bp ='pos', p = 'snp_p', snp = 'snp', main= "lm(URICACID ~ SNP)")
+manhattan(x=df2, chr = 'chr', bp ='pos', p = 'res_snp_p', snp = 'snp', main= "lm(residuals^2 ~ SNP")
