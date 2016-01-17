@@ -1,0 +1,36 @@
+## This is the general approach taken in Jaron's summer studentship project in investigating variance in urate loci.
+## Performed on SLC2A9, ABCG2, SLC22A11/A12, SLC17A1/A2, SLC16A9, RREB1, PDZK1, INHBC, GCKR loci.
+## Scripts, datasets and other files (including summaries of each locus with a notable result) can be found under staff_groups/merrimanlab/Merriman Documents/Jaron on the biochemistry server.
+# Whole cohort = Topless et al. European cohort.
+# Also done on an African American cohort for SLC2A9 (involving ARIC, CHS and JHS).
+
+For each locus:
+1. Variance analysis is done on each individual dataset (ARIC, CARDIA, CHS, FHS) using the variance.script.R.
+2. The variance analysis results are combined by meta analysis (meta.R) using a fixed effects model for P_het > 0.05; for P_het <0.05, a random effects model is used instead.
+3. Visualisation of the locus by uploading to LocusZoom is done for each of the mean effect, unadjusted variance effect and adjusted variance effect (+/- 400 kb for full visualisation).
+4. SNPs of interest are picked out, focusing primarily on variance effects.
+5. Testing SNPs for non-additive interaction is done with the following variables: 
+      diuretic exposure (no = 0, yes = 1), 
+      sugar-sweetened beverage (SSB) intake per day (on average, as a continuous variable)
+      menopausal status (pre-menopausal vs. post-menopausal women; females only).
+      beer intake per day (on average, as a continuous variable).
+    In addition to this, each SNP investigated is coded for their two possibilities in terms of allelic dominance effects, and retested each time:
+      i.e. for rs4148155 at ABCG2, two seperate analyses are conducted using:
+      a. AA (coded as 0) vs. AG or GG (coded as 1) genotypes.
+      b. GG (coded as 0) vs. AG or AA (coded as 1) genotypes.
+    Analysis is done by linear regression with an interaction term between the SNP and exposure, adjusted by age, sex, BMI, PCA1 and PCA2.
+    The coefficient for the interaction term is extracted from the summary output.
+6. Where the interaction term is statistically significant (P < 0.05), further investigation is done by the formation of gene-environment (GxE) groups, for that particular allelic scenario.
+    For continous variables such as SSB intake/day, this involves splitting subjects into two groups based on allelic exposure
+      (e.g. AA in one group, 
+      AG or GG in the second)
+       - Linear regression is then done with URATE vs. VARIABLE (+ AGE, SEX, BMI, PCA1, PCA2), with the coefficient as the result.
+    For discrete variables such as diuretic exposure, this involves splitting subjects into four groups based on allelic exposure and diuretic exposure
+      (e.g. Group 1: AA w/ no diuretic exposure; coded as 0,
+            Group 2: AG or GG w/ no diuretic exposure; coded as 1,
+            Group 3: AA w/ diuretic exposure; coded as 2,
+            Group 4: AG or GG w/ diuretic exposure; coded as 3)
+      - Linear regression is then done with URATE vs. (as.factor)GROUP variable, (+AGE, SEX, BMI, PCA1, PCA2), with the coefficients as the result for each group, and with group 1 (coded as 0) as the reference).
+    Where appropriate, a linear regression is done with URATE vs. VARIABLE (+AGE, SEX, BMI, PCA1, PCA2) on the whole cohort (i.e. disregarding genotype status), in order to obtain a baseline reading for comparison of the effects.
+7. (For SLC2A9 and ABCG2), further investigation was done by splitting the cohort into two subgroups based on diuretic exposure, and then running them through the variance analysis and meta analysis as seperate groups before comparison.
+    - Visualisation was then done on LocusZoom again. The effects of the the variable can be observed (e.g. diuretic exposure in SLC2A9 overrides the variance effects; this is not seen in the diuretic-unexposed group).
