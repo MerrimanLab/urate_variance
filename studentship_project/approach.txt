@@ -1,14 +1,64 @@
+Skip to content
+This repository  
+Search
+Pull requests
+Issues
+Gist
+ @huaja022
+ Unwatch 1
+  Star 0
+ Fork 1 huaja022/urate_variance
+forked from MerrimanLab/urate_variance
+ Code  Pull requests 0  Wiki  Pulse  Graphs  Settings
+Tree: 401688ab86 Find file Copy pathurate_variance/studentship_project/approach.txt
+401688a  21 hours ago
+@huaja022 huaja022 Update approach.txt
+1 contributor
+RawBlameHistory     84 lines (71 sloc)  8.13 KB
 ## This is the general approach taken in Jaron's summer studentship project in investigating variance in urate loci.
 ## Performed on SLC2A9, ABCG2, SLC22A11/A12, SLC17A1/A2, SLC16A9, RREB1, PDZK1, INHBC, GCKR loci.
-## Scripts, datasets and other files (including summaries of each locus with a notable result) can be found under staff_groups/merrimanlab/Merriman Documents/Jaron on the biochemistry server.
-# Whole cohort = Topless et al. European cohort.
+## Scripts, datasets and other files (including summaries of each locus with a notable result) can be found under staff_groups/merrimanlab/Merriman Documents/Jaron/Reproduce on the biochemistry server. All files mentioned are in reference to this directory.
+# Whole cohort = Topless et al. European cohort (n=14125; -1 subjectID who was in both ARIC and ARICDIU, and was messing up the analysis with both ARIC cohorts combined.)
 # Also done on an African American cohort for SLC2A9 (involving ARIC, CHS and JHS).
 
 For each locus:
-1. Variance analysis is done on each individual dataset (ARIC, CARDIA, CHS, FHS) using the variance.script.R.
-2. The variance analysis results are combined by meta analysis (meta.R) using a fixed effects model for P_het > 0.05; for P_het <0.05, a random effects model is used instead.
-3. Visualisation of the locus by uploading to LocusZoom is done for each of the mean effect, unadjusted variance effect and adjusted variance effect (+/- 400 kb for full visualisation).
-4. SNPs of interest are picked out, focusing primarily on variance effects.
+1. SNPmax genotypes were exported from their appropriate datasets:
+      ARIC: <flyta734> ARIC Imputed Urate Loci +-200kb
+      CARDIA: <flyta734> CARDIA Imputed Urate Loci +-200kb +strand
+      CHS: <flyta734> CHS Imputed Urate Loci +-200kb
+      FHS: <flyta734> FHS imputed Urate Loci +-200kb
+      (JHS: <huaja022> JHS SLC2A9 imputed +-200kb)
+      
+      Phenotypes were exported from these datasets:
+      ARIC: <mccru29p> ARIC Phenotypes 2014 Visit 1 - version4
+      CARDIA: <mccru29p> CARDIA phenotypes version 4
+      CHS: <mccru29p> CHS phenotypes March 2015
+      FHS: <mccru29p> FHS Generation 3 August 2013
+      (JHS: <mccru29p> JHS phenotypes visit 1 version 3)
+      
+2. Each dataset was made by combining the columns 1:9 (containing SUBJECT, COHORT, SEX, AGE, BMI, MENOPAUSE, URICACID, PCA1, PCA2) of the dataset I was initially given with the exported SNPmax genotypes. The Rscript files are named "Making <locus> dataset.R" and can be found in each locus directory, and the initial files with no genotype data are listed under /no_geno/<dataset>1_df.txt.
+
+3. Variance analysis is done on each individual dataset (ARIC, CARDIA, CHS, FHS) using the variance.script.R.
+      Stratifying the analysis by menopausal status or sex included adding "MENOPAUSE" as a column considered in the tmp variables that run during the script, and then specifying which subset in the final output summaries (i.e. the linear regressions involving testCOHORT, COHORTunadj and COHORTadj):
+      MALES: subset=SEX==1
+      FEMALES: subset=SEX==2
+      PRE: subset=MENOPAUSE=="PRE"
+      POST: subset=MENOPAUSE=="POST"
+      e.g. "tryCatch(testCOHORT<-lm(URICACID~as.numeric(SNP)+SEX+AGE+BMI+PCA1+PCA2, data=tmp, subset=MENOPAUSE=="POST"),error=function(e) NULL)"
+      
+      Stratifying the analysis by diuretic exposure did not include changes to the Rscript function, but instead involved stratifying the data by diuretic exposure (ARIC diuretic participants + CHS diuretic participants, who were initially included in the whole CHS dataset; CHS diuretic participants based on the variable URICACIDCAU==8 (taking diuretics)) before running them through the variance script individually.
+      
+4. The variance analysis results are combined by meta analysis (meta.R) using a fixed effects model for P_het > 0.05; for P_het <0.05, a random effects model is used instead. SNPs were filtered based on this criteria:
+      ## remove SNPs with K less than 4
+      result_Mean <- result_Mean[result_Adj$K==4,] ## this was done because we were getting weird SNPs in the mean effect plots for LocusZoom. Refer to emails with Tony RE:ABCG2.
+      result_Adj <- result_Adj[result_Adj$K==4,]
+      result_Unadj <- result_Unadj[result_Unadj$K==4,]
+      - An example of meta.R is given, with the particular script relevant to analysis at the GCKR locus.
+      
+3. Visualisation of the locus by uploading to LocusZoom is done for each of the mean effect, unadjusted variance effect and adjusted variance effect (+/- 400 kb for full visualisation). Settings can be found below.
+
+4. SNPs of interest are picked out, focusing primarily on variance effects. For more in-depth, refer to merrimanlab/Merriman Documents/Jaron/Summary of <gene>.docx, e.g. Summary of SLC2A9.docx.
+
 5. Testing SNPs for non-additive interaction is done with the following variables: 
       diuretic exposure (no = 0, yes = 1), 
       sugar-sweetened beverage (SSB) intake per day (on average, as a continuous variable)
@@ -19,12 +69,14 @@ For each locus:
       a. AA (coded as 0) vs. AG or GG (coded as 1) genotypes.
       b. GG (coded as 0) vs. AG or AA (coded as 1) genotypes.
     Analysis is done by linear regression with an interaction term between the SNP and exposure, adjusted by age, sex, BMI, PCA1 and PCA2.
-    The coefficient for the interaction term is extracted from the summary output.
+    The coefficient for the interaction term is extracted from the summary output; this is the value reported on in the summary documents. An example is the file "Non-additive interaction for diuretics.R", which investigated possible non-additive interactions with diuretic exposure at SLC2A9. 
+    
 6. Where the interaction term is statistically significant (P < 0.05), further investigation is done by the formation of gene-environment (GxE) groups, for that particular allelic scenario.
     For continous variables such as SSB intake/day, this involves splitting subjects into two groups based on allelic exposure
       (e.g. AA in one group, 
       AG or GG in the second)
        - Linear regression is then done with URATE vs. VARIABLE (+ AGE, SEX, BMI, PCA1, PCA2), with the coefficient as the result.
+       - An example of the script used for this is the file "GxE for post platelet_count.R", which investigated a significant finding with non-additive interaction between platelet count and urate levels in post-menopausal women (rs7657853 at SLC2A9).
     For discrete variables such as diuretic exposure, this involves splitting subjects into four groups based on allelic exposure and diuretic exposure
       (e.g. Group 1: AA w/ no diuretic exposure; coded as 0,
             Group 2: AG or GG w/ no diuretic exposure; coded as 1,
@@ -32,5 +84,19 @@ For each locus:
             Group 4: AG or GG w/ diuretic exposure; coded as 3)
       - Linear regression is then done with URATE vs. (as.factor)GROUP variable, (+AGE, SEX, BMI, PCA1, PCA2), with the coefficients as the result for each group, and with group 1 (coded as 0) as the reference).
     Where appropriate, a linear regression is done with URATE vs. VARIABLE (+AGE, SEX, BMI, PCA1, PCA2) on the whole cohort (i.e. disregarding genotype status), in order to obtain a baseline reading for comparison of the effects.
+      - An example is the file "Non-additive interaction for diuretics.R", which contains both the non-additive interaction testing script and the GxE group formation script.
+    
 7. (For SLC2A9 and ABCG2), further investigation was done by splitting the cohort into two subgroups based on diuretic exposure, and then running them through the variance analysis and meta analysis as seperate groups before comparison.
+      (As said before, CHS diuretic participants based on the variable URICACIDCAU==8 (taking diuretics); these participants were then removed from the whole CHS dataset, forming two subgroups (CHS diuretics and CHS non-diuretics))
     - Visualisation was then done on LocusZoom again. The effects of the the variable can be observed (e.g. diuretic exposure in SLC2A9 overrides the variance effects; this is not seen in the diuretic-unexposed group).
+  
+##
+LocusZoom settings (if not mentioned, left default):
+      Uploaded file - meta_MeanEffect; meta_vUnadjEffect; meta_vAdjEffect
+      P-Value Column Name - P
+      Marker Column Name - SNP
+      Specific region to display - either specified by SNP (+/- 400 kb) or by gene (+/- 400 kb) depending on the LocusZoom
+      Title on plot - as appropriate; usually <gene (for whole cohort)> or <diu/sex/menopausal status (for a subset)> <effect>. e.g. for the adjusted variance plot for SLC2A9 in males would simply be listed under the SLC2A9 folder as: MALES vAdjEffect. The whole cohort SLC2A9 would be named SLC2A9 vAdjEffect.
+      Maximum rows of gene names - set to 2, for easier comparability.
+Status API Training Shop Blog About Pricing
+© 2016 GitHub, Inc. Terms Privacy Security Contact Help
