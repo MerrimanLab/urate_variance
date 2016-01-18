@@ -20,7 +20,6 @@ For each locus:
       (JHS: <mccru29p> JHS phenotypes visit 1 version 3)
       
 2. Each dataset was made by combining the columns 1:9 (containing SUBJECT, COHORT, SEX, AGE, BMI, MENOPAUSE, URICACID, PCA1, PCA2) of the dataset I was initially given with the exported SNPmax genotypes. The Rscript files are named "Making <locus> dataset.R" and can be found in each locus directory, and the initial files with no genotype data are listed under /no_geno/<dataset>1_df.txt.
-      An example is given for ARIC1_df.txt. ## (the genotype files are too large to upload at 190 MB, and there shouldn't be any datasets made public anyway correct?)
 
 3. Variance analysis is done on each individual dataset (ARIC, CARDIA, CHS, FHS) using the variance.script.R.
       Stratifying the analysis by menopausal status or sex included adding "MENOPAUSE" as a column considered in the tmp variables that run during the script, and then specifying which subset in the final output summaries (i.e. the linear regressions involving testCOHORT, COHORTunadj and COHORTadj):
